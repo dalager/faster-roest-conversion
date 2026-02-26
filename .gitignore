@@ -1,0 +1,18 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Cached wheels and converted models
+cache/
+models--*-ct2/
+.claude
+.claude-flow
+.swarm
+models--CoRal-project--roest-v3-whisper-1.5b
