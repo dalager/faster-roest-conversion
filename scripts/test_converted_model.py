@@ -69,8 +69,8 @@ def detect_device():
             print(f"GPU detected ({vendor}). Supported compute types: {supported}")
             compute_type = "float16" if "float16" in supported else "float32"
             return "cuda", compute_type
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"GPU detection failed: {e}")
 
     print("No GPU detected, using CPU with auto compute type.")
     return "cpu", "auto"

@@ -23,5 +23,10 @@ WORKDIR /workspace
 # Copy package files for installation
 COPY pyproject.toml ./
 
-# Install Python dependencies (ctranslate2 ROCm installed at runtime from cache)
-RUN pip install --no-cache-dir transformers faster-whisper
+# Install Python dependencies WITHOUT ctranslate2 — the ROCm wheel is
+# installed at container start from the local cache (see dev.sh).
+# faster-whisper pulls in the CPU-only ctranslate2 as a dependency,
+# so we install it with --no-deps and add its other deps manually.
+RUN pip install --no-cache-dir transformers \
+    && pip install --no-cache-dir --no-deps faster-whisper \
+    && pip install --no-cache-dir av huggingface-hub tokenizers onnxruntime
