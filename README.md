@@ -1,17 +1,15 @@
 # fasterroest
 
-Convert the [CoRal roest-v3-whisper-1.5b](https://huggingface.co/CoRal-project/roest-v3-whisper-1.5b) model to [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (CTranslate2) format for fast Danish speech-to-text on AMD ROCm GPUs.
+Convert [CoRal roest-v3-whisper-1.5b](https://huggingface.co/CoRal-project/roest-v3-whisper-1.5b) to [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (CTranslate2) format for fast Danish speech-to-text.
 
-The converted model is a drop-in replacement for [Systran/faster-whisper-large-v3](https://huggingface.co/Systran/faster-whisper-large-v3).
+Supports **NVIDIA CUDA** and **AMD ROCm** GPUs, plus CPU-only inference.
 
 ## Prerequisites
 
-- Docker with ROCm support (AMD GPU)
-- Git LFS (`sudo apt install git-lfs` or `brew install git-lfs`)
+- Docker with GPU support ([NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) or [ROCm](https://rocm.docs.amd.com/))
+- Git LFS (`sudo apt install git-lfs`)
 
 ## Download the model
-
-Clone the [roest-v3-whisper-1.5b](https://huggingface.co/CoRal-project/roest-v3-whisper-1.5b) model from HuggingFace into the project directory:
 
 ```bash
 git lfs install
@@ -19,7 +17,7 @@ git clone https://huggingface.co/CoRal-project/roest-v3-whisper-1.5b \
   models--CoRal-project--roest-v3-whisper-1.5b/snapshots/main
 ```
 
-Alternatively, download using the `huggingface-cli`:
+Or via `huggingface-cli`:
 
 ```bash
 pip install huggingface-hub
@@ -27,11 +25,19 @@ huggingface-cli download CoRal-project/roest-v3-whisper-1.5b \
   --local-dir models--CoRal-project--roest-v3-whisper-1.5b/snapshots/main
 ```
 
-The model is ~3GB (two sharded safetensors files). After downloading, the directory should contain `config.json`, `tokenizer.json`, `preprocessor_config.json`, and `model-00001-of-00002.safetensors` / `model-00002-of-00002.safetensors`.
-
 ## Setup
 
-Download the CTranslate2 ROCm wheel (one-time, ~284MB):
+### NVIDIA GPU
+
+```bash
+./dev.sh --nvidia --build
+```
+
+CTranslate2 with CUDA support is installed from pip automatically.
+
+### AMD ROCm GPU
+
+Download the ROCm CTranslate2 wheel first (one-time, ~284 MB):
 
 ```bash
 mkdir -p cache
@@ -39,20 +45,18 @@ wget -O cache/rocm-python-wheels-Linux.zip \
   https://github.com/OpenNMT/CTranslate2/releases/download/v4.7.1/rocm-python-wheels-Linux.zip
 ```
 
-Build and launch the container:
+Then build and launch:
 
 ```bash
-./dev.sh --build
+./dev.sh --rocm --build
 ```
-
-The ROCm CTranslate2 wheel is installed automatically from the local cache on container start.
 
 ## Convert the model
 
-Inside the container:
+Inside the container (same commands for both GPUs):
 
 ```bash
-# float32 (lossless, ~6GB)
+# float32 (lossless, ~6 GB)
 python scripts/convert_to_faster_whisper.py
 
 # int8 (smaller, good for CPU)
@@ -61,8 +65,6 @@ python scripts/convert_to_faster_whisper.py -q int8
 # See all quantization options
 python scripts/convert_to_faster_whisper.py --list-quantizations
 ```
-
-Output goes to `models--CoRal-project--roest-v3-whisper-1.5b-ct2/`.
 
 ## Test
 
@@ -80,9 +82,9 @@ python scripts/test_converted_model.py audio.wav
 from faster_whisper import WhisperModel
 
 model = WhisperModel(
-    "models--CoRal-project--roest-v3-whisper-1.5b-ct2",
-    device="cuda",          # ROCm uses "cuda" via HIP
-    compute_type="float16"  # safest on ROCm
+    "models--CoRal-project--roest-v3-whisper-1.5b-ct2_float32",
+    device="cuda",          # works for both NVIDIA and ROCm
+    compute_type="float16",
 )
 
 segments, info = model.transcribe("audio.wav", language="da")
@@ -90,9 +92,21 @@ for seg in segments:
     print(f"[{seg.start:.2f}s -> {seg.end:.2f}s] {seg.text}")
 ```
 
+## Quantization guide
+
+| Quantization | Size | Best for |
+|---|---|---|
+| `float32` | ~6 GB | Safe baseline, any hardware |
+| `bfloat16` | ~3 GB | Ampere+ NVIDIA or ROCm with bf16 |
+| `int8` | ~1.5 GB | CPU inference |
+| `int8_float16` | ~1.5 GB | NVIDIA GPU |
+| `int8_bfloat16` | ~1.5 GB | Ampere+ GPU |
+| `int8_float32` | ~1.5 GB | CPU (optimized) |
+
 ## Notes
 
-- The model is trained in `bfloat16` — avoid `float16` quantization during conversion (causes numerical issues). Use `float32`, `int8`, or `bfloat16`.
+- The model is trained in `bfloat16` -- avoid `float16` quantization during conversion (numerical issues). Use `float32`, `int8`, or `bfloat16`.
 - ROCm presents as `device="cuda"` through HIP compatibility.
-- For CPU-only usage, `compute_type="int8"` or `"auto"` works with the standard pip `ctranslate2` package.
-- ROCm GPU requires the official ROCm wheel from [CTranslate2 v4.7.1](https://github.com/OpenNMT/CTranslate2/releases/tag/v4.7.1).
+- For CPU-only: standard pip `ctranslate2` with `compute_type="int8"` or `"auto"`.
+- ROCm GPU requires the [CTranslate2 v4.7.1 ROCm wheel](https://github.com/OpenNMT/CTranslate2/releases/tag/v4.7.1).
+- NVIDIA GPU: standard `pip install ctranslate2` includes CUDA support.

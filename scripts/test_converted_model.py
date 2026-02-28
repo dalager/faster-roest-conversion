@@ -35,20 +35,38 @@ def test_transcribe(model, audio_path: str):
 
     print(f"Detected language: {info.language} (probability: {info.language_probability:.2f})")
     print(f"Duration: {info.duration:.1f}s")
-    print()
+    print(info)
 
     for segment in segments:
         print(f"[{segment.start:6.2f}s -> {segment.end:6.2f}s] {segment.text}")
 
 
+def detect_gpu_vendor() -> str:
+    """Detect whether we're running on NVIDIA or AMD GPU."""
+    try:
+        import subprocess
+        result = subprocess.run(["nvidia-smi"], capture_output=True)
+        if result.returncode == 0:
+            return "nvidia"
+    except FileNotFoundError:
+        pass
+    try:
+        if Path("/dev/kfd").exists():
+            return "amd"
+    except Exception:
+        pass
+    return "none"
+
+
 def detect_device():
-    """Detect best available device."""
+    """Detect best available device and compute type."""
+    vendor = detect_gpu_vendor()
+
     try:
         import ctranslate2
         supported = ctranslate2.get_supported_compute_types("cuda")
         if supported:
-            print(f"GPU detected. Supported compute types: {supported}")
-            # float16 is safest on ROCm
+            print(f"GPU detected ({vendor}). Supported compute types: {supported}")
             compute_type = "float16" if "float16" in supported else "float32"
             return "cuda", compute_type
     except Exception:

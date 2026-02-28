@@ -5,6 +5,8 @@ This script converts a HuggingFace WhisperForConditionalGeneration model
 with sharded safetensors into a CTranslate2 model directory that is
 compatible with faster-whisper's WhisperModel.
 
+Works with both NVIDIA CUDA and AMD ROCm GPUs (and CPU-only).
+
 Usage:
     python scripts/convert_to_faster_whisper.py [--quantization QUANT] [--output-dir DIR]
 
@@ -135,8 +137,9 @@ def convert(source_dir: Path, output_dir: Path, quantization: str):
     print("  from faster_whisper import WhisperModel")
     print()
     print(f'  model = WhisperModel("{output_dir}",')
-    print('      device="cpu", compute_type="int8")  # CPU')
-    print("  # or device=\"cuda\", compute_type=\"float16\"  # GPU (ROCm uses \"cuda\")")
+    print('      device="cpu",  compute_type="int8")     # CPU')
+    print('  #   device="cuda", compute_type="float16")  # NVIDIA GPU')
+    print('  #   device="cuda", compute_type="float16")  # AMD ROCm (uses "cuda" via HIP)')
     print()
     print('  segments, info = model.transcribe("audio.wav", language="da")')
     print("  for seg in segments:")
@@ -175,7 +178,8 @@ def main():
 
     check_dependencies()
     source_dir = find_snapshot_dir()
-    convert(source_dir, args.output_dir, args.quantization)
+    output_dir = Path(str(args.output_dir) + "_" + args.quantization)
+    convert(source_dir, output_dir, args.quantization)
 
 
 if __name__ == "__main__":

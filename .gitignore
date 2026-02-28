@@ -11,7 +11,7 @@ wheels/
 
 # Cached wheels and converted models
 cache/
-models--*-ct2/
+models--*-ct2*/
 .claude
 .claude-flow
 .swarm

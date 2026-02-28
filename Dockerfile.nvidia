@@ -1,0 +1,17 @@
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  python3 python3-pip python3-venv \
+  bash-completion vim less wget curl \
+  && rm -rf /var/lib/apt/lists/* \
+  && echo 'PS1="\[\033[1;32m\]\u@container\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ "' >> /root/.bashrc \
+  && echo 'alias ll="ls -la"' >> /root/.bashrc
+
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+WORKDIR /workspace
+
+COPY pyproject.toml ./
+
+# Standard pip ctranslate2 includes CUDA support
+RUN pip install --no-cache-dir ctranslate2 transformers faster-whisper
