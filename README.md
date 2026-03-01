@@ -1,4 +1,4 @@
-# fasterroest
+# Faster-Roest Conversion
 
 Convert [CoRal roest-v3-whisper-1.5b](https://huggingface.co/CoRal-project/roest-v3-whisper-1.5b) to [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (CTranslate2) format for fast Danish speech-to-text.
 
@@ -56,7 +56,7 @@ Then build and launch:
 Inside the container (same commands for both GPUs):
 
 ```bash
-# float32 (lossless, ~6 GB)
+# bfloat16 - default
 python scripts/convert_to_faster_whisper.py
 
 # int8 (smaller, good for CPU)
@@ -82,7 +82,7 @@ python scripts/test_converted_model.py audio.wav
 from faster_whisper import WhisperModel
 
 model = WhisperModel(
-    "models--CoRal-project--roest-v3-whisper-1.5b-ct2_float32",
+    "models--CoRal-project--roest-v3-whisper-1.5b-ct2_bfloat16",
     device="cuda",          # works for both NVIDIA and ROCm
     compute_type="float16",
 )
@@ -94,14 +94,14 @@ for seg in segments:
 
 ## Quantization guide
 
-| Quantization | Size | Best for |
-|---|---|---|
-| `float32` | ~6 GB | Safe baseline, any hardware |
-| `bfloat16` | ~3 GB | Ampere+ NVIDIA or ROCm with bf16 |
-| `int8` | ~1.5 GB | CPU inference |
-| `int8_float16` | ~1.5 GB | NVIDIA GPU |
-| `int8_bfloat16` | ~1.5 GB | Ampere+ GPU |
-| `int8_float32` | ~1.5 GB | CPU (optimized) |
+| Quantization    | Size    | Best for                         |
+| --------------- | ------- | -------------------------------- |
+| `float32`       | ~6 GB   | Safe baseline, any hardware      |
+| `bfloat16`      | ~3 GB   | Ampere+ NVIDIA or ROCm with bf16 |
+| `int8`          | ~1.5 GB | CPU inference                    |
+| `int8_float16`  | ~1.5 GB | NVIDIA GPU                       |
+| `int8_bfloat16` | ~1.5 GB | Ampere+ GPU                      |
+| `int8_float32`  | ~1.5 GB | CPU (optimized)                  |
 
 ## Notes
 

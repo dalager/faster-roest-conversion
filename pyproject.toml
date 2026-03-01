@@ -1,11 +1,11 @@
 [project]
 name = "fasterroest"
 version = "0.1.0"
-description = "Add your description here"
+description = "Simple project for converting CORAL Røst-v3-Whisper to Faster-Whisper"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
-    "ctranslate2>=4.7.1",
-    "transformers>=4.40",
-    "faster-whisper>=1.1.0",
+  "ctranslate2>=4.7.1",
+  "transformers>=4.40",
+  "faster-whisper>=1.2.0",
 ]
