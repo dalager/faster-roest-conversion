@@ -36,15 +36,15 @@ COPY_FILES = ["tokenizer.json", "preprocessor_config.json"]
 # Quantization options safe for this bfloat16-trained model.
 # Avoid plain float16 — it causes numerical issues with bf16-trained weights.
 SAFE_QUANTIZATIONS = {
-    "float32": "Full precision, largest (~6GB). Safe baseline.",
     "bfloat16": "Matches training dtype. Needs Ampere+ GPU or ROCm with bf16.",
+    "float32": "Full precision, largest (~6GB). Safe baseline.",
     "int8": "8-bit weights. Best for CPU inference.",
     "int8_float32": "int8 weights, fp32 compute. CPU-optimized.",
     "int8_float16": "int8 weights, fp16 compute. NVIDIA GPU.",
     "int8_bfloat16": "int8 weights, bf16 compute. Ampere+ GPU.",
 }
 
-DEFAULT_QUANTIZATION = "float32"
+DEFAULT_QUANTIZATION = "bfloat16"
 
 
 def find_snapshot_dir() -> Path:
@@ -138,8 +138,8 @@ def convert(source_dir: Path, output_dir: Path, quantization: str):
     print()
     print(f'  model = WhisperModel("{output_dir}",')
     print('      device="cpu",  compute_type="int8")     # CPU')
-    print('  #   device="cuda", compute_type="float16")  # NVIDIA GPU')
-    print('  #   device="cuda", compute_type="float16")  # AMD ROCm (uses "cuda" via HIP)')
+    print('  #   device="cuda", compute_type="bfloat16")  # NVIDIA GPU')
+    print('  #   device="cuda", compute_type="bfloat16")  # AMD ROCm (uses "cuda" via HIP)')
     print()
     print('  segments, info = model.transcribe("audio.wav", language="da")')
     print("  for seg in segments:")
